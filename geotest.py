@@ -236,6 +236,19 @@ def testUser(api):
         print("\n")
 
 
+def fullDataDump(api):
+    pp = pprint.PrettyPrinter(indent=4)
+    keywords=['Device','User','Trailer','LogRecord','DutyStatusLog']
+
+    for ky in keywords:
+        xxx=api.get(ky)
+        print('------------------%s-------------------\n'%ky)
+        for i in xxx:
+            pp.pprint(i);
+            print('-'*80)
+            print('\n')
+
+
 def testBlock():
     try:
         api = mygeotab.API(username='lescanic@gmail.com', password='1qaz!QAZ2wsx@WSX', database='NV_Dan')
@@ -249,19 +262,14 @@ def testBlock():
         sys.exit(-1)
 
     api.authenticate()
-    pp = pprint.PrettyPrinter(indent=4)
-    xxx=api.get('Device')
-    for i in xxx:
-        pp.pprint(i);
-        print('-'*80)
-        print('\n')
+
     testDevice(api)
     testDriver(api)
     testLocation(api)
     testVehicle(api)
     testTrailer(api)
     testStatuLog(api)
-
+    fullDataDump(api)
 
 if __name__ == '__main__':
     testBlock()
