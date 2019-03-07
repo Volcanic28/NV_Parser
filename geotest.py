@@ -1,4 +1,5 @@
 import mygeotab
+import pprint
 
 # *****************************************************************************
 class Location:
@@ -101,8 +102,6 @@ class DutyStatusLog:
         self.lineDataCheck = ""
         self.multidayBasis = 0
         self.outputFileComment = ""
-
-
 
 def testDevice(api):
     dev = Device(api)
@@ -238,8 +237,13 @@ def testUser(api):
 
 def testBlock():
     api = mygeotab.API(username='lescanic@gmail.com', password='1qaz!QAZ2wsx@WSX', database='NV_Dan')
-    creds = api.authenticate()
-    print(creds)
+    api.authenticate()
+    pp = pprint.PrettyPrinter(indent=4)
+    xxx=api.get('Device')
+    for i in xxx:
+        pp.pprint(i);
+        print('-'*80)
+        print('\n')
     testDevice(api)
     testDriver(api)
     testLocation(api)
