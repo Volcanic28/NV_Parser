@@ -1,5 +1,6 @@
 import mygeotab
 import pprint
+import sys
 
 # *****************************************************************************
 class Location:
@@ -236,7 +237,17 @@ def testUser(api):
 
 
 def testBlock():
-    api = mygeotab.API(username='lescanic@gmail.com', password='1qaz!QAZ2wsx@WSX', database='NV_Dan')
+    try:
+        api = mygeotab.API(username='lescanic@gmail.com', password='1qaz!QAZ2wsx@WSX', database='NV_Dan')
+    except MyGeotabException:
+        type, value, traceback = sys.exc_info()
+        print('Geotab Exception:  %s %s: %s\n' % (type, value.filename, value.strerror))
+        print (traceback);
+        sys.exit(-1)
+    except TimeoutException:
+        print ('Geotab Timeout \n')
+        sys.exit(-1)
+
     api.authenticate()
     pp = pprint.PrettyPrinter(indent=4)
     xxx=api.get('Device')
