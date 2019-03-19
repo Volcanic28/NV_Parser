@@ -38,9 +38,9 @@ class Vehicle:
 
 # *****************************************************************************
 class Driver:
-    def __init__(self, name, id, lic, state, term):
+    def __init__(self, name, ident, lic, state, term):
         self.username = name
-        self.id = id
+        self.ident = ident
         self.driverLicenseNumber = lic
         self.driverState = state
         self.driverHomeTerminal = term
@@ -103,6 +103,43 @@ class DutyStatusLog:
         self.lineDataCheck = ""
         self.multidayBasis = 0
         self.outputFileComment = ""
+
+
+# *****************************************************************************
+class AnnotationLog:
+    def __init__(self):
+        self.comment = ""
+        self.dateTime = ""
+        self.driver = Driver("", "", "", "", "")
+
+
+
+def testAnnotationLog(api):
+    data = api.get("AnnotationLog", resultsLimit=10)
+    ALogs = []
+    a_log = AnnotationLog()
+    for i in data:
+        a_log.comment = i["comment"]
+        a_log.dateTime = i["dateTime"]
+        driver_data = api.get("User", search={'id': i["driver"]["id"]})
+        name = driver_data[0]["name"]
+        ident = driver_data[0]["id"]
+        try:
+            lic = driver_data[0]["licenseNumber"]
+        except:
+            lic = ""
+        try:
+            prov = driver_data[0]["licenseProvince"]
+        except:
+            prov = ""
+        auth = driver_data[0]["authorityName"]
+        a_log.driver = Driver(name, ident, lic, prov, auth)
+        print("Annotation Log Test:")
+        print("comment: ", a_log.comment)
+        print("dateTime: ", a_log.dateTime)
+        print("driver: ", a_log.driver.ident)
+        print("\n")
+
 
 def testDevice(api):
     dev = Device(api)
@@ -269,6 +306,7 @@ def testBlock():
     testVehicle(api)
     testTrailer(api)
     testStatuLog(api)
+    testAnnotationLog(api)
     fullDataDump(api)
 
 if __name__ == '__main__':
