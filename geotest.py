@@ -38,12 +38,19 @@ class Vehicle:
 
 # *****************************************************************************
 class Driver:
-    def __init__(self, name, ident, lic, state, term):
-        self.username = name
-        self.ident = ident
-        self.driverLicenseNumber = lic
-        self.driverState = state
-        self.driverHomeTerminal = term
+    def __init__(self, api, id):
+        data = api.get("User", search={'id':id})[0]
+        self.username = data["name"]
+        self.id = data["id"]
+        try:
+            self.driverLicenseNumber = data["licenseNumber"]
+        except:
+            self.driverLicenseNumber = "Not On File"
+        try:
+            self.driverState = data["licenseProvince"]
+        except:
+            self.driverState = "Not On File"
+        self.driverHomeTerminal = data["authorityName"]
         self.onDutyTime = 0
         self.offDutyTime = 0
         self.HOSAvailableHours = 0
@@ -51,20 +58,28 @@ class Driver:
 
 # *****************************************************************************
 class Device:
-    def __init__(self,api):
-        self.eldIdentifier = api.get('Device')[0]["deviceType"]
+    def __init__(self, api, id):
+        self.id = id
+        self.eldIdentifier = api.get('Device', search={'id':id})[0]["deviceType"]
         self.eldProvider = "Geotab Inc."
         self.eldRegID = "GEOTAB"
 
 # *****************************************************************************
 class User:
-    def __init__(self, un, fn, ln):
-        self.accountType = ""
-        self.username = un
-        self.firstName = fn
-        self.lastName = ln
-        self.Role = ""
-        self.timezone = ""
+    def __init__(self, api, id):
+        data = api.get("User", search={'id':id})[0]
+        if "isDriver" in data: 
+            if data["isDriver"]:
+                self.accountType = "Driver"
+            else:
+                self.accountType = "Non-Driver"
+        else:
+            self.accountType = "Undefined"
+        self.username = data["name"]
+        self.firstName = data["firstName"]
+        self.lastName = data["lastName"]
+        self.Role = data["designation"]
+        self.timezone = data["timeZoneId"]
         self.securityClearanceAccess = False
         self.groupAccess = False
         self.exemptDriver = ""
@@ -72,12 +87,15 @@ class User:
 
 # *****************************************************************************
 class Trailer:
-    def __init__(self, cmnt, id, name, num):
-        self.comment = cmnt
+    def __init__(self, api, id):
+        data = api.get("Trailer", search={'id':id})[0]
+        self.comment = data["comment"]
         self.groups = []
+        for n in data["groups"]:
+            self.groups.append(n['id'])
         self.id = id
-        self.name = name
-        self.trailerNum = num
+        self.name = data["name"]
+        self.trailerNum = data["version"]
 
 
 # *****************************************************************************
@@ -107,49 +125,68 @@ class DutyStatusLog:
 
 # *****************************************************************************
 class AnnotationLog:
-    def __init__(self):
-        self.comment = ""
-        self.dateTime = ""
-        self.driver = Driver("", "", "", "", "")
+    def __init__(self, api, id):
+        data = api.get("AnnotationLog", search={'id':id})[0]
+        self.comment = data["comment"]
+        self.dateTime = data["dateTime"]
+        self.driver = Driver(api, data["driver"]["id"])
 
+
+# *****************************************************************************
+class TrailerAttachment:
+    def __init__(self, api, id):
+        data = api.get("TrailerAttachment", search={'id':id})[0]
+        self.activeFrom = data["activeFrom"]
+        self.activeTo = data["activeTo"]
+        self.device = Device(api, data["device"]["id"])
+        self.trailer = Trailer(api, data["trailer"]["id"])
+        self.id = data["id"]
+
+
+# *****************************************************************************
+# TEST FUNCTIONS:
+# *****************************************************************************
+
+
+def testTrailerAttachment(api):
+    data = api.get("TrailerAttachment")
+    trlr_atts = []
+    for i in data:
+        trlr_att = TrailerAttachment(api, i['id'])
+        trlr_atts.append(trlr_att)
+        print("Trailer Attachment Test:")
+        print("activeFrom:",trlr_att.activeFrom)
+        print("activeTo:",trlr_att.activeTo)
+        print("device:",trlr_att.device.id)
+        print("trailer:",trlr_att.trailer.id)
+        print("id:",trlr_att.id)
+        print("\n")
 
 
 def testAnnotationLog(api):
     data = api.get("AnnotationLog", resultsLimit=10)
     ALogs = []
-    a_log = AnnotationLog()
     for i in data:
-        a_log.comment = i["comment"]
-        a_log.dateTime = i["dateTime"]
-        driver_data = api.get("User", search={'id': i["driver"]["id"]})
-        name = driver_data[0]["name"]
-        ident = driver_data[0]["id"]
-        try:
-            lic = driver_data[0]["licenseNumber"]
-        except:
-            lic = ""
-        try:
-            prov = driver_data[0]["licenseProvince"]
-        except:
-            prov = ""
-        auth = driver_data[0]["authorityName"]
-        a_log.driver = Driver(name, ident, lic, prov, auth)
-        print("Annotation Log Test:")
-        print("comment: ", a_log.comment)
-        print("dateTime: ", a_log.dateTime)
-        print("driver: ", a_log.driver.ident)
+        ALogs.append(AnnotationLog(api, i["id"]))
+
+    print("Annotation Log Test:")
+    for k in ALogs:
+        print("comment: ", k.comment)
+        print("dateTime: ", k.dateTime)
+        print("driver: ", k.driver.id)
         print("\n")
 
 
 def testDevice(api):
-    dev = Device(api)
+    dev = Device(api, 'b1')
     print("Device Object Test:")
     print("eldIdentifier:", dev.eldIdentifier)
     print("eldProvider:", dev.eldProvider)
     print("eldRegID:", dev.eldRegID)
     print("\n")
 
-def testStatuLog(api):
+
+def testDutyStatusLog(api):
     data = api.get("DutyStatusLog", resultsLimit=10)
     DSLogs = []
     ds_log = DutyStatusLog()
@@ -190,7 +227,7 @@ def testDriver(api):
     Drivers = []
     for i in data:
         if "isDriver" in i.keys() and i["isDriver"]:
-            drvr = Driver(i["name"], i["id"], i["licenseNumber"], i["licenseProvince"], i["authorityName"])
+            drvr = Driver(api, i["id"])
             Drivers.append(drvr)
     print("Driver Object Test:")
     for n in Drivers:
@@ -232,9 +269,7 @@ def testTrailer(api):
     data = api.get("Trailer")
     Trailers = []
     for i in data:
-        tlr = Trailer(i["comment"], i["id"], i["name"], i["version"])
-        for n in i["groups"]:
-            tlr.groups.append(n["id"])
+        tlr = Trailer(api, i["id"])
         Trailers.append(tlr)
     print("Trailer Object Test:")
     for k in Trailers:
@@ -249,21 +284,10 @@ def testTrailer(api):
 def testUser(api):
     data = api.get("User")
     Users = []
-
     for i in data:
-        user = User(i["name"], i["firstName"], i["lastName"])
-        if "isDriver" in i.keys():
-            if i["isDriver"]:
-                user.accountType = "Driver"
-            else:
-                user.accountType = "Non-Driver"
-        else:
-            user.accountType = "Undefined"
-        user.Role = i["designation"]
-        user.timezone = i["timeZoneId"]
-        Users.append(user)
+        Users.append(User(api, i["id"]))
+    
     print("User Object Test:\n")
-
     for n in Users:
         print("Username:", n.username)
         print("First Name:", n.firstName)
@@ -305,9 +329,11 @@ def testBlock():
     testLocation(api)
     testVehicle(api)
     testTrailer(api)
-    testStatuLog(api)
+    testDutyStatusLog(api)
     testAnnotationLog(api)
-    fullDataDump(api)
+    testTrailerAttachment(api)
+    testUser(api)
+    # fullDataDump(api)
 
 if __name__ == '__main__':
     testBlock()
