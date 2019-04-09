@@ -518,7 +518,7 @@ def fullDataDump(api):
 
 def testBlock():
     try:
-        api = mygeotab.API(username='lescanic@gmail.com', password='1qaz!QAZ2wsx@WSX', database='NV_Dan')
+        api = mygeotab.API(username='', password='', database='NV_Dan')
     except MyGeotabException:
         type, value, traceback = sys.exc_info()
         print('Geotab Exception:  %s %s: %s\n' % (type, value.filename, value.strerror))
@@ -530,19 +530,19 @@ def testBlock():
 
     api.authenticate()
 
-    # testDutyStatusLog(api)
+    testDutyStatusLog(api)
     testAnnotationLog(api)
-    # testLocation(api)
-    # testTrailer(api)
-    # testTrailerAttachment(api)
-    # testShipmentLog(api)
-    # testVehicle(api)
-    # testUser(api)
-    # testHomeTerminal(api)
-    # testDriver(api)
-    # testDVIRLog(api)
-    # testDevice(api)
-    # testELDEvent(api)
+    testLocation(api)
+    testTrailer(api)
+    testTrailerAttachment(api)
+    testShipmentLog(api)
+    testVehicle(api)
+    testUser(api)
+    testHomeTerminal(api)
+    testDriver(api)
+    testDVIRLog(api)
+    testDevice(api)
+    testELDEvent(api)
     # fullDataDump(api)
 
 if __name__ == '__main__':
